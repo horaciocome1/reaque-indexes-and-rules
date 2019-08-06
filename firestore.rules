@@ -1,0 +1,81 @@
+function isSigned() {
+  return request.auth != null
+}
+
+function isOwner(post) {
+  return post.user.id == request.auth.uid
+}
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    match /topics/{topicId} {
+      allow read, update: if (isSigned())
+
+      match /posts/{postId} {
+        allow read: if (isSigned())
+      }
+
+      match /users/{userId} {
+        allow read: if (isSigned())
+      }
+
+    }
+  
+    match /posts/{postId} {
+      allow delete: if false
+      allow create: if (isSigned()
+                        && isOwner(request.resource.data))
+      allow read, update: if (isSigned())
+
+      match /ratings/{userId} {
+        allow delete: if false
+        allow create, update, read: if (isSigned()
+                        && userId == request.auth.uid)
+      }
+
+    }
+
+    match /users/{userId} {
+      allow delete: if false
+      allow read, update: if (isSigned())
+
+      match /posts/{postId} {
+        allow read: if (isSigned())
+      }
+
+      match /readings/{postId} {
+        allow create: if (isSigned()
+                          && userId == request.auth.uid)
+        allow delete, update: if false
+      }
+
+      match /shares/{postId} {
+        allow create: if (isSigned()
+                          && userId == request.auth.uid)
+        allow delete, update: if false
+      }
+
+      match /bookmarks/{postId} {
+        allow write, read: if (isSigned()
+                          && userId == request.auth.uid)
+      }
+
+      match /subscriptions/{subscriptionId} {
+        allow write: if (isSigned()
+                          && userId == request.auth.uid)
+        allow read: if (isSigned())
+      }
+
+      match /subscribers/{subscriberId} {
+        allow write: if (isSigned()
+                          && userId == request.auth.uid)
+        allow read: if (isSigned())
+      }
+
+    }  
+
+  }
+  
+}
