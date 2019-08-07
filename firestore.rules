@@ -34,7 +34,7 @@ service cloud.firestore {
         // - the user must be signed
         // - the user must be the author of that post
         // - the post's topic must pair with the parent topic
-        allow create: if (isSigned() && isAuthor(request.resource.data) && isFromTopic(request.resource.data, topicId)
+        allow create: if (isSigned() && isAuthor(request.resource.data) && isFromTopic(request.resource.data, topicId))
 
       }
 
