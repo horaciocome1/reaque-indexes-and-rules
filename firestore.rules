@@ -11,26 +11,26 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /topics/{topicId} {
-      allow read, update: if (isSigned())
+      allow read, update: if isSigned()
 
       match /posts/{postId} {
-        allow read: if (isSigned())
+        allow read: if isSigned()
+        allow create: if (isSigned()
+                          && isOwner(request.resource.data))
       }
 
       match /users/{userId} {
-        allow read: if (isSigned())
+        allow read: if isSigned()
       }
 
     }
   
     match /posts/{postId} {
-      allow delete: if false
       allow create: if (isSigned()
                         && isOwner(request.resource.data))
-      allow read, update: if (isSigned())
+      allow read, update: if isSigned()
 
       match /ratings/{userId} {
-        allow delete: if false
         allow create, update, read: if (isSigned()
                         && userId == request.auth.uid)
       }
@@ -38,23 +38,27 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow delete: if false
-      allow read, update: if (isSigned())
+      allow read, update: if isSigned()
+
+      match /feed/{postId} {
+        allow read: if (isSigned()
+                        && userId == request.auth.uid)
+      }
 
       match /posts/{postId} {
-        allow read: if (isSigned())
+        allow read: if isSigned()
+        allow create: if (isSigned()
+                          && userId == request.auth.uid)
       }
 
       match /readings/{postId} {
         allow create: if (isSigned()
                           && userId == request.auth.uid)
-        allow delete, update: if false
       }
 
       match /shares/{postId} {
         allow create: if (isSigned()
                           && userId == request.auth.uid)
-        allow delete, update: if false
       }
 
       match /bookmarks/{postId} {
@@ -65,13 +69,13 @@ service cloud.firestore {
       match /subscriptions/{subscriptionId} {
         allow write: if (isSigned()
                           && userId == request.auth.uid)
-        allow read: if (isSigned())
+        allow read: if isSigned()
       }
 
       match /subscribers/{subscriberId} {
         allow write: if (isSigned()
                           && userId == request.auth.uid)
-        allow read: if (isSigned())
+        allow read: if isSigned()
       }
 
     }  
