@@ -1,18 +1,3 @@
-function isSigned() {
-  // verifies if the request is from a signed user
-  return request.auth != null
-}
-
-function isAuthor(post) {
-  // verifies if the user is the author of the post
-  return post.user.id == request.auth.uid
-}
-
-function isFromTopic(post, topicId) {
-  // verifies if the post is from the passed topic id
-  return post.topic.id == topicId
-}
-
 service cloud.firestore {
 
   match /databases/{database}/documents {
@@ -23,30 +8,30 @@ service cloud.firestore {
 
       // every signed user can read a topic
       // every signed user need to increment topic's post field when creating a post
-      allow read, update: if isSigned()
+      allow read, update: if request.auth != null;
 
       match /posts/{postId} {
 
         // every signed user can read a list of posts from an topic
-        allow read: if isSigned()
+        allow read: if request.auth != null;
 
         // to create an post document inside an topic:
         // - the user must be signed
         // - the user must be the author of that post
         // - the post's topic must pair with the parent topic
-        allow create: if (isSigned() && isAuthor(request.resource.data) && isFromTopic(request.resource.data, topicId))
+        allow create: if request.auth != null && request.resource.data.user.id == request.auth.uid && request.resource.data.topic.id == topicId;
 
       }
 
       match /users/{userId} {
 
         // every signed user can read a list of users that write to an topic
-        allow read: if isSigned()
+        allow read: if request.auth != null;
 
         // to create an user document inside an topic:
         // - the user must be signed
         // - the user can only create for himself
-        allow create: if (isSigned() && userId == request.auth.uid)
+        allow create: if request.auth != null && userId == request.auth.uid;
 
       }
 
@@ -61,15 +46,15 @@ service cloud.firestore {
       // to create an post document:
       // - the user must be signed
       // - the user must be the author of that post
-      allow create: if (isSigned() && isAuthor(request.resource.data))
+      allow create: if request.auth != null && request.resource.data.user.id == request.auth.uid;
 
       // any signed user can read an post
       // any signed user can update an post to increment bookmarks, shares, or readings
-      allow read, update: if isSigned()
+      allow read, update: if request.auth != null;
 
       match /ratings/{userId} {
         // to create, delete or read a rating the user must signed and be the author of that rating
-        allow create, update, read: if (isSigned() && userId == request.auth.uid)
+        allow create, update, read: if request.auth != null && userId == request.auth.uid;
       }
 
     }
@@ -82,24 +67,24 @@ service cloud.firestore {
 
       // any signed user can read an user document
       // any signed user can update an user document to increment or decrement subscriptions or subscribers
-      allow read, update: if isSigned()
+      allow read, update: if request.auth != null;
 
       match /feed/{postId} {
         // to read an post document on a feed:
         // - the user must be signed
         // - the user must be reading its own feed
-        allow read: if (isSigned() && userId == request.auth.uid)
+        allow read: if request.auth != null && userId == request.auth.uid;
       }
 
       match /posts/{postId} {
 
         // any signed user can read an post document of some author
-        allow read: if isSigned()
+        allow read: if request.auth != null;
 
         // to create an post document inside user's posts subcollection:
         // - the user must be signed
         // - the user must be the author
-        allow create: if (isSigned() && isAuthor(request.resource.data))
+        allow create: if request.auth != null && request.resource.data.user.id == request.auth.uid;
         
       }
 
@@ -107,21 +92,21 @@ service cloud.firestore {
         // to create an post document inside user's readings subcollection:
         // - the user must be signed
         // - the user can only create for himself
-        allow create: if (isSigned() && userId == request.auth.uid)
+        allow create: if request.auth != null && userId == request.auth.uid;
       }
 
       match /shares/{postId} {
         // to create an post document inside user's shares subcollection:
         // - the user must be signed
         // - the user can only create for himself
-        allow create: if (isSigned() && userId == request.auth.uid)
+        allow create: if request.auth != null && userId == request.auth.uid;
       }
 
       match /bookmarks/{postId} {
         // to create, delete or read an post document inside user's bookmarks subcollection:
         // - the user must be signed
         // - the user can only create, delete or read his own bookmarks
-        allow create, delete, read: if (isSigned() && userId == request.auth.uid)
+        allow create, delete, read: if request.auth != null && userId == request.auth.uid;
       }
 
       match /subscriptions/{subscriptionId} {
@@ -129,10 +114,10 @@ service cloud.firestore {
         // to create or delete an subscription document:
         // - the user must be signed
         // - the user can only create or delete for himself
-        allow create, delete: if (isSigned() && userId == request.auth.uid)
+        allow create, delete: if request.auth != null && userId == request.auth.uid;
 
         // any signed user can read an user subscriptions
-        allow read: if isSigned()
+        allow read: if request.auth != null;
 
       }
 
@@ -141,16 +126,24 @@ service cloud.firestore {
         // to create or delete an subscriber document:
         // - the user must be signed
         // - the user can only create or delete if he is the subscriber
-        allow write: if (isSigned() && subscriberId == request.auth.uid)
+        allow write: if request.auth != null && subscriberId == request.auth.uid;
 
         // any signed user can read an user subscribers
-        allow read: if isSigned()
+        allow read: if request.auth != null;
 
       }
 
     }
 
-    // ------------- 03. END OF USERS RULES  
+    // ------------- 03. END OF USERS RULES
+
+    // ------------- 04. START OF CONFIGURATIONS RULES
+
+    match /configurations/default {
+      allow read: if request.auth != null
+    }
+
+    // ------------- 04. START OF CONFIGURATIONS RULES  
 
   }
   
